@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  name            String
+  password        String
+  overall_gpa     Float?
+  resetToken      String?
+  resetTokenExpiry DateTime?
+  applications    Application[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  gpa_1_1         Float         @default(-1)  // 1학년 1학기
+  gpa_1_2         Float         @default(-1)  // 1학년 2학기
+  gpa_2_1         Float         @default(-1)  // 2학년 1학기
+  gpa_2_2         Float         @default(-1)  // 2학년 2학기
+  gpa_3_1         Float         @default(-1)  // 3학년 1학기
+  isVerified              Boolean   @default(false)
+  verificationToken       String?
+  verificationTokenExpiry DateTime?
+}
+
+model University {
+  id        String    @id @default(cuid())
+  name      String
+  colleges  College[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model College {
+  id           String      @id @default(cuid())
+  name         String
+  university   University  @relation(fields: [universityId], references: [id])
+  universityId String
+  departments  Department[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Department {
+  id                  String        @id @default(cuid())
+  name                String
+  capacity            Int
+  currentApplications Int           @default(0)
+  college             College       @relation(fields: [collegeId], references: [id])
+  collegeId           String
+  applications        Application[]
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+}
+
+model Application {
+  id           String     @id @default(cuid())
+  user         User       @relation(fields: [userId], references: [id])
+  userId       String
+  department   Department @relation(fields: [departmentId], references: [id])
+  departmentId String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([departmentId])
+}
