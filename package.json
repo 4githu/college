@@ -4,11 +4,11 @@
 	"version": "0.0.1",
 	"type": "module",
 	"engines": {
-		"node": "16.x"
+		"node": "18.x"
 	},
 	"scripts": {
 		"dev": "vite dev",
-		"build": "NODE_ENV=production prisma generate && vite build",
+		"build": "ROLLUP_NATIVE=no prisma generate && vite build",
 		"postinstall": "prisma generate",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
