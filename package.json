@@ -3,9 +3,12 @@
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
+	"engines": {
+		"node": "18.x"
+	},
 	"scripts": {
 		"dev": "vite dev",
-		"build": "npm install @rollup/rollup-linux-x64-gnu && prisma generate && vite build",
+		"build": "prisma generate && vite build",
 		"postinstall": "prisma generate",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
