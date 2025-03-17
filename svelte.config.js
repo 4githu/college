@@ -1,7 +1,4 @@
 import adapter from '@sveltejs/adapter-vercel';
-import { preprocessMeltUI } from '@melt-ui/pp';
-import sequence from 'svelte-sequential-preprocessor';
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -14,11 +11,7 @@ const config = {
 		adapter: adapter({
 			runtime: 'nodejs18'  // Node.js 버전 명시
 		})
-	},
-	preprocess: sequence([
-		vitePreprocess(),
-		preprocessMeltUI()
-	])
+	}
 };
 
 export default config;
