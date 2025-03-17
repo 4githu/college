@@ -19,7 +19,7 @@
 		"@sveltejs/adapter-auto": "^4.1.0",
 		"@sveltejs/adapter-vercel": "^5.1.0",
 		"@sveltejs/kit": "^2.0.0",
-		"@sveltejs/vite-plugin-svelte": "^3.0.0",
+		"@sveltejs/vite-plugin-svelte": "^5.0.0",
 		"@types/bcrypt": "^5.0.2",
 		"prisma": "^6.5.0",
 		"svelte": "^5.0.0",
@@ -36,5 +36,10 @@
 	},
 	"prisma": {
 		"seed": "node prisma/seed.js"
+	},
+	"pnpm": {
+		"overrides": {
+			"@sveltejs/vite-plugin-svelte": "^5.0.0"
+		}
 	}
 }
