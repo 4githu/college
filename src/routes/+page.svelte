@@ -1,6 +1,7 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
     import { user } from '$lib/auth';
+    import { onMount } from 'svelte';
     
     let email = '';
     let password = '';
@@ -28,58 +29,14 @@
             errorMessage = '서버 오류가 발생했습니다.';
         }
     }
+
+    onMount(() => {
+        goto('/login');
+    });
 </script>
 
 <div class="container">
-    <h1>대학 지원 현황 시스템</h1>
-    
-    <div class="main-content">
-        <div class="login-section">
-            <h2>로그인</h2>
-            {#if errorMessage}
-                <p class="error">{errorMessage}</p>
-            {/if}
-            <form on:submit|preventDefault={handleLogin}>
-                <div class="form-group">
-                    <div class="email-input">
-                        <input 
-                            type="text" 
-                            bind:value={email} 
-                            placeholder="이메일"
-                            required
-                        />
-                        <span class="email-domain">@djshs.djsch.kr</span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <input 
-                        type="password" 
-                        bind:value={password} 
-                        placeholder="비밀번호"
-                        required
-                    />
-                </div>
-                <button type="submit" class="login-btn">로그인</button>
-            </form>
-            <div class="auth-links">
-                <p class="register-link">
-                    계정이 없으신가요? <a href="/register">회원가입</a>
-                </p>
-                <p class="forgot-password-link">
-                    <a href="/forgot-password">비밀번호를 잊으셨나요?</a>
-                </p>
-            </div>
-        </div>
-
-        <div class="divider">또는</div>
-
-        <div class="view-section">
-            <p>대학 지원 현황을 확인하고 지원할 수 있습니다.</p>
-            <button class="view-btn" on:click={() => goto('/selection')}>
-                지원 현황 보기
-            </button>
-        </div>
-    </div>
+    <h1>Loading...</h1>
 </div>
 
 <style>
