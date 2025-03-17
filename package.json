@@ -1,11 +1,11 @@
 {
-	"name": "my-svelte-app",
+	"name": "college",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
-		"build": "prisma generate && vite build",
+		"build": "ROLLUP_SKIP_NODE_RESOLVE=true prisma generate && vite build",
 		"postinstall": "prisma generate",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
@@ -33,5 +33,8 @@
 	},
 	"prisma": {
 		"seed": "node prisma/seed.js"
+	},
+	"overrides": {
+		"rollup": "npm:@rollup/wasm-node"
 	}
 }
