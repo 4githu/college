@@ -1,134 +1,122 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
     
-    let emailPrefix = '';  // @djshs.djsch.kr 앞부분만 입력받음
-    let password = '';
-    let confirmPassword = '';
+    let email = '';
     let name = '';
+    let password = '';
+    let verificationCode = '';
     let errorMessage = '';
-    let successMessage = '';
-    let isLoading = false;
+    let step = 1; // 1: 초기 정보, 2: 인증 코드 확인
 
-    // 전체 이메일 주소 생성
-    $: email = `${emailPrefix}@djshs.djsch.kr`;
-
-    async function handleSubmit() {
+    async function handleInitialSubmit() {
         try {
-            if (password !== confirmPassword) {
-                errorMessage = '비밀번호가 일치하지 않습니다.';
-                return;
-            }
-
-            if (!emailPrefix) {
-                errorMessage = '이메일을 입력해주세요.';
-                return;
-            }
-
-            isLoading = true;
+            // 이메일 도메인 자동 추가
+            const fullEmail = email.includes('@') ? email : `${email}@djshs.djsch.kr`;
+            
             const response = await fetch('/api/register', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    email,  // 자동으로 생성된 전체 이메일 주소 사용
-                    password,
-                    name
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    email: fullEmail,
+                    name,
+                    password 
                 })
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                successMessage = data.message;
+                step = 2;
                 errorMessage = '';
-                // 성공 메시지를 보여주고 3초 후 로그인 페이지로 이동
-                setTimeout(() => {
-                    goto('/login');
-                }, 3000);
             } else {
                 errorMessage = data.message;
-                successMessage = '';
             }
         } catch (error) {
             errorMessage = '서버 오류가 발생했습니다.';
-            successMessage = '';
-        } finally {
-            isLoading = false;
+        }
+    }
+
+    async function handleVerification() {
+        try {
+            const fullEmail = email.includes('@') ? email : `${email}@djshs.djsch.kr`;
+            
+            const response = await fetch('/api/verify-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    email: fullEmail,
+                    code: verificationCode
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                goto('/');
+            } else {
+                errorMessage = data.message;
+            }
+        } catch (error) {
+            errorMessage = '서버 오류가 발생했습니다.';
         }
     }
 </script>
 
-<div class="register-container">
-    <h1>회원가입</h1>
-    
-    {#if errorMessage}
-        <div class="error-message">{errorMessage}</div>
-    {/if}
-    
-    {#if successMessage}
-        <div class="success-message">
-            {successMessage}
-            <p class="redirect-message">잠시 후 로그인 페이지로 이동합니다...</p>
+<div class="container">
+    <div class="register-section">
+        <h2>회원가입</h2>
+        {#if errorMessage}
+            <div class="error">{errorMessage}</div>
+        {/if}
+
+        {#if step === 1}
+            <form on:submit|preventDefault={handleInitialSubmit}>
+                <div class="form-group">
+                    <div class="email-input">
+                        <input
+                            type="text"
+                            bind:value={email}
+                            placeholder="학번"
+                            required
+                        />
+                        <span class="email-domain">@djshs.djsch.kr</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input
+                        type="text"
+                        bind:value={name}
+                        placeholder="이름"
+                        required
+                    />
+                </div>
+                <div class="form-group">
+                    <input
+                        type="password"
+                        bind:value={password}
+                        placeholder="비밀번호"
+                        required
+                    />
+                </div>
+                <button type="submit" class="submit-btn">인증 코드 받기</button>
+            </form>
+        {:else}
+            <form on:submit|preventDefault={handleVerification}>
+                <div class="form-group">
+                    <input
+                        type="text"
+                        bind:value={verificationCode}
+                        placeholder="인증 코드 6자리 입력"
+                        required
+                    />
+                </div>
+                <button type="submit" class="submit-btn">회원가입 완료</button>
+            </form>
+        {/if}
+
+        <div class="register-link">
+            이미 계정이 있으신가요? <a href="/">로그인하기</a>
         </div>
-    {/if}
-
-    <form on:submit|preventDefault={handleSubmit}>
-        <div class="form-group">
-            <label for="email">이메일</label>
-            <div class="email-input-container">
-                <input
-                    type="text"
-                    id="email"
-                    bind:value={emailPrefix}
-                    required
-                    placeholder="이메일"
-                    disabled={isLoading}
-                />
-                <span class="email-domain">@djshs.djsch.kr</span>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="name">이름</label>
-            <input
-                type="text"
-                id="name"
-                bind:value={name}
-                required
-                disabled={isLoading}
-            />
-        </div>
-
-        <div class="form-group">
-            <label for="password">비밀번호</label>
-            <input
-                type="password"
-                id="password"
-                bind:value={password}
-                required
-                disabled={isLoading}
-            />
-        </div>
-
-        <div class="form-group">
-            <label for="confirmPassword">비밀번호 확인</label>
-            <input
-                type="password"
-                id="confirmPassword"
-                bind:value={confirmPassword}
-                required
-                disabled={isLoading}
-            />
-        </div>
-
-        <button type="submit" disabled={isLoading}>
-            {isLoading ? '처리중...' : '회원가입'}
-        </button>
-    </form>
-
-    <div class="login-link">
-        이미 계정이 있으신가요? <a href="/login">로그인하기</a>
     </div>
 </div>
 

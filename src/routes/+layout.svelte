@@ -1,8 +1,6 @@
 <script>
-    import { page } from '$app/stores';
-    import { signOut } from "@auth/sveltekit/client";
+    import { user } from '$lib/auth';
 </script>
-
 
 <slot />
 

@@ -76,3 +76,13 @@ model Application {
   @@index([userId])
   @@index([departmentId])
 }
+
+model VerificationCode {
+    id        String   @id @default(cuid())
+    email     String
+    name      String
+    password  String
+    code      String
+    expiresAt DateTime
+    createdAt DateTime @default(now())
+}

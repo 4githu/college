@@ -1,7 +1,6 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
     import { user } from '$lib/auth';
-    import { onMount } from 'svelte';
     
     let email = '';
     let password = '';
@@ -21,7 +20,7 @@
 
             if (response.ok) {
                 user.login(data.user);
-                goto('/selection');  // 프로필 대신 selection 페이지로 이동
+                goto('/selection');
             } else {
                 errorMessage = data.message;
             }
@@ -29,14 +28,47 @@
             errorMessage = '서버 오류가 발생했습니다.';
         }
     }
-
-    onMount(() => {
-        goto('/login');
-    });
 </script>
 
 <div class="container">
-    <h1>Loading...</h1>
+    <div class="main-content">
+        <div class="login-section">
+            <h2>로그인</h2>
+            {#if errorMessage}
+                <div class="error">{errorMessage}</div>
+            {/if}
+            <form on:submit|preventDefault={handleLogin}>
+                <div class="form-group">
+                    <div class="email-input">
+                        <input
+                            type="text"
+                            bind:value={email}
+                            placeholder="학번"
+                            required
+                        />
+                        <span class="email-domain">@djshs.djsch.kr</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input
+                        type="password"
+                        bind:value={password}
+                        placeholder="비밀번호"
+                        required
+                    />
+                </div>
+                <button type="submit" class="login-btn">로그인</button>
+            </form>
+            <div class="auth-links">
+                <div class="register-link">
+                    <a href="/register">회원가입</a>
+                </div>
+                <div class="forgot-password-link">
+                    <a href="/forgot-password">비밀번호를 잊으셨나요?</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -45,10 +77,6 @@
         margin: 2rem auto;
         padding: 1rem;
         text-align: center;
-    }
-
-    h1 {
-        margin-bottom: 2rem;
     }
 
     h2 {
@@ -98,61 +126,13 @@
         width: 100%;
     }
 
-    .view-btn {
-        background: #4CAF50;
-        color: white;
-    }
-
     button:hover {
         opacity: 0.9;
-    }
-
-    .divider {
-        width: 100%;
-        text-align: center;
-        color: #666;
-        position: relative;
-    }
-
-    .divider::before,
-    .divider::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        width: 45%;
-        height: 1px;
-        background: #ddd;
-    }
-
-    .divider::before {
-        left: 0;
-    }
-
-    .divider::after {
-        right: 0;
     }
 
     .error {
         color: #dc3545;
         margin-bottom: 1rem;
-    }
-
-    .view-section {
-        text-align: center;
-    }
-
-    .register-link {
-        margin-top: 1rem;
-        font-size: 0.9rem;
-    }
-
-    .register-link a {
-        color: #007bff;
-        text-decoration: none;
-    }
-
-    .register-link a:hover {
-        text-decoration: underline;
     }
 
     .email-input {
@@ -173,15 +153,13 @@
         gap: 0.5rem;
     }
 
-    .forgot-password-link {
-        font-size: 0.9rem;
-    }
-
+    .register-link a,
     .forgot-password-link a {
-        color: #6c757d;
+        color: #007bff;
         text-decoration: none;
     }
 
+    .register-link a:hover,
     .forgot-password-link a:hover {
         text-decoration: underline;
     }

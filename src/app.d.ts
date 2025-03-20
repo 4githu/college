@@ -4,10 +4,18 @@ declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
-			getSession(): Promise<import('@auth/core').Session | null>
+			user?: {
+				id: string;
+				email: string;
+				name: string;
+			} | null;
 		}
 		interface PageData {
-			session: import('@auth/core').Session | null
+			user?: {
+				id: string;
+				email: string;
+				name: string;
+			} | null;
 		}
 		// interface PageState {}
 		// interface Platform {}
