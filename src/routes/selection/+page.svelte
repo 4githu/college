@@ -1,17 +1,14 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
-    import { user } from '$lib/auth';
+    import { user, loadUser } from '$lib/auth';
     import type { University } from '$lib/types';
 
     let universities: University[] = [];
     let errorMessage = '';
 
     onMount(async () => {
-        if (!$user) {
-            goto('/');
-            return;
-        }
+        await loadUser();
         await loadUniversities();
     });
 
@@ -31,6 +28,20 @@
     function handleUniversityClick(universityId: string) {
         goto(`/university/${universityId}`);
     }
+
+    async function handleLogout() {
+        try {
+            const response = await fetch('/api/logout', {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                window.location.href = '/';
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+    }
 </script>
 
 <div class="container">
@@ -42,10 +53,7 @@
             <button class="nav-btn profile-btn" on:click={() => goto('/profile')}>
                 {$user?.name || '프로필'}
             </button>
-            <button class="nav-btn" on:click={() => {
-                user.logout();
-                goto('/');
-            }}>
+            <button class="nav-btn" on:click={handleLogout}>
                 로그아웃
             </button>
         </div>

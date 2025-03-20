@@ -8,6 +8,7 @@ declare global {
 				id: string;
 				email: string;
 				name: string;
+				isAdmin: boolean;
 			} | null;
 		}
 		interface PageData {
@@ -15,6 +16,7 @@ declare global {
 				id: string;
 				email: string;
 				name: string;
+				isAdmin: boolean;
 			} | null;
 		}
 		// interface PageState {}

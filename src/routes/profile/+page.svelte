@@ -12,11 +12,11 @@
     let useOverallGpa = true;
     
     // 학기별 학점을 위한 변수 추가
-    let semesterGpas = Array(5).fill('-1');  // 1-1부터 3-1까지 5개 학기
+    let semesterGpas = Array(5).fill('-1');
 
     onMount(async () => {
         if (!$user) {
-            goto('/');  // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
+            goto('/');
             return;
         }
         await loadProfileData();
@@ -39,15 +39,29 @@
                 const data = await response.json();
                 name = data.name;
                 email = data.email;
-                overallGpa = data.overall_gpa > 0 ? data.overall_gpa.toString() : '';
+                
+                // 전체 평균학점 처리
+                if (data.overall_gpa !== null && data.overall_gpa > 0) {
+                    overallGpa = data.overall_gpa.toString();
+                    useOverallGpa = true;
+                } else {
+                    overallGpa = '';
+                    useOverallGpa = false;
+                }
+
                 // 학기별 학점 로드
                 semesterGpas = [
-                    data.gpa_1_1.toString(),
-                    data.gpa_1_2.toString(),
-                    data.gpa_2_1.toString(),
-                    data.gpa_2_2.toString(),
-                    data.gpa_3_1.toString()
+                    data.gpa_1_1 > -1 ? data.gpa_1_1.toString() : '-1',
+                    data.gpa_1_2 > -1 ? data.gpa_1_2.toString() : '-1',
+                    data.gpa_2_1 > -1 ? data.gpa_2_1.toString() : '-1',
+                    data.gpa_2_2 > -1 ? data.gpa_2_2.toString() : '-1',
+                    data.gpa_3_1 > -1 ? data.gpa_3_1.toString() : '-1'
                 ];
+
+                // 학기별 학점이 있으면 학기별 입력 모드로 전환
+                if (semesterGpas.some(gpa => parseFloat(gpa) > -1)) {
+                    useOverallGpa = false;
+                }
             }
         } catch (error) {
             errorMessage = '프로필 정보를 불러오는데 실패했습니다.';
@@ -71,21 +85,13 @@
             const response = await fetch('/api/profile', {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-User-Email': $user?.email || ''
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     name,
-                    ...(useOverallGpa 
-                        ? { overall_gpa: parseFloat(overallGpa) }
-                        : {
-                            gpa_1_1: parseFloat(semesterGpas[0]),
-                            gpa_1_2: parseFloat(semesterGpas[1]),
-                            gpa_2_1: parseFloat(semesterGpas[2]),
-                            gpa_2_2: parseFloat(semesterGpas[3]),
-                            gpa_3_1: parseFloat(semesterGpas[4])
-                        }
-                    )
+                    useOverallGpa,
+                    overall_gpa: overallGpa,
+                    semester_gpas: semesterGpas
                 })
             });
 
@@ -100,6 +106,7 @@
                 successMessage = '';
             }
         } catch (error) {
+            console.error('Profile update error:', error);
             errorMessage = '서버 오류가 발생했습니다.';
             successMessage = '';
         }
@@ -111,6 +118,20 @@
         const semester = (index % 2) + 1;
         return `${year}-${semester}`;
     }
+
+    async function handleLogout() {
+        try {
+            const response = await fetch('/api/logout', {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                window.location.href = '/';
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+    }
 </script>
 
 <div class="container">
@@ -118,6 +139,11 @@
         <div class="nav-left">
             <button class="nav-btn" on:click={() => goto('/selection')}>
                 뒤로가기
+            </button>
+        </div>
+        <div class="nav-right">
+            <button class="logout-btn" on:click={handleLogout}>
+                로그아웃
             </button>
         </div>
     </nav>
@@ -257,6 +283,9 @@
     }
 
     .navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 2rem;
     }
 
@@ -267,6 +296,24 @@
         border: none;
         border-radius: 4px;
         cursor: pointer;
+    }
+
+    .nav-right {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .logout-btn {
+        padding: 0.5rem 1rem;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .logout-btn:hover {
+        background: #c82333;
     }
 
     .profile-container {

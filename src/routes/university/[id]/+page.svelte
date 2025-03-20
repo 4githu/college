@@ -2,7 +2,7 @@
     import { page } from '$app/stores';
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
-    import { user } from '$lib/auth';
+    import { user, loadUser } from '$lib/auth';
     import type { University, College, Department } from '$lib/types';
 
     let university: University | null = null;
@@ -14,6 +14,7 @@
     let previousApplicationsCount: { [key: string]: number } = {};
 
     onMount(async () => {
+        await loadUser();  // 사용자 정보 로드
         if (!$user) {
             goto('/');
             return;
@@ -163,16 +164,16 @@
             return;
         }
 
-        if (!$user.overall_gpa) {
-            alert('학점을 먼저 입력해주세요.');
-            goto('/profile');
-            return;
-        }
-
         try {
             const isApplied = userApplications.some(app => app.departmentId === departmentId);
             let response;
             
+            console.log('Attempting to apply/cancel:', {
+                departmentId,
+                userEmail: $user.email,
+                isApplied
+            });
+
             if (isApplied) {
                 // DELETE 요청
                 response = await fetch(`/api/applications?id=${departmentId}&userEmail=${$user.email}`, {
@@ -181,6 +182,7 @@
                 });
             } else {
                 // POST 요청
+                console.log('Sending POST request to /api/applications');
                 response = await fetch('/api/applications', {
                     method: 'POST',
                     headers: {
@@ -194,9 +196,12 @@
                 });
             }
 
+            console.log('Response status:', response.status);
+            const responseData = await response.json();
+            console.log('Response data:', responseData);
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || '처리에 실패했습니다.');
+                throw new Error(responseData.error || '처리에 실패했습니다.');
             }
 
             // 성공 시 페이지 새로고침
@@ -205,6 +210,20 @@
         } catch (error) {
             console.error('Application error:', error);
             alert(error.message || '서버 오류가 발생했습니다.');
+        }
+    }
+
+    async function handleLogout() {
+        try {
+            const response = await fetch('/api/logout', {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                window.location.href = '/';
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
         }
     }
 
@@ -225,10 +244,7 @@
             <button class="nav-btn profile-btn" on:click={() => goto('/profile')}>
                 {$user?.name || '프로필'}
             </button>
-            <button class="nav-btn" on:click={() => {
-                user.logout();
-                goto('/');
-            }}>
+            <button class="nav-btn" on:click={handleLogout}>
                 로그아웃
             </button>
         </div>
@@ -262,7 +278,6 @@
                         </h3>
                         <button 
                             class="apply-btn {userApplications.some(app => app.departmentId === department.id) ? 'cancel-btn' : ''}"
-                            disabled={!userApplications.some(app => app.departmentId === department.id) && department._count.applications >= department.capacity}
                             on:click={() => handleApply(department.id)}
                         >
                             {userApplications.some(app => app.departmentId === department.id) ? '신청 취소' : '신청'}
@@ -380,7 +395,6 @@
 
     .apply-btn:disabled {
         background: #6c757d;
-        cursor: not-allowed;
     }
 
     .applications-list {

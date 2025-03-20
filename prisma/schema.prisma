@@ -32,6 +32,7 @@ model User {
   isVerified              Boolean   @default(false)
   verificationToken       String?
   verificationTokenExpiry DateTime?
+  isAdmin                 Boolean   @default(false)
 }
 
 model University {

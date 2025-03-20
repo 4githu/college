@@ -1,118 +1,87 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { prisma } from '$lib/prisma';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 // GET: 프로필 정보 조회
 export const GET: RequestHandler = async ({ request }) => {
     try {
-        const email = request.headers.get('X-User-Email');
+        const email = request.headers.get('x-user-email');
 
         if (!email) {
-            return new Response(
-                JSON.stringify({
-                    success: false,
-                    message: '인증 정보가 없습니다.'
-                }),
-                { status: 401 }
-            );
+            return json({ message: '사용자 정보를 찾을 수 없습니다.' }, { status: 400 });
         }
 
         const user = await prisma.user.findUnique({
-            where: { email },
-            select: {
-                name: true,
-                email: true,
-                overall_gpa: true,
-                gpa_1_1: true,
-                gpa_1_2: true,
-                gpa_2_1: true,
-                gpa_2_2: true,
-                gpa_3_1: true
-            }
+            where: { email }
         });
 
         if (!user) {
-            return new Response(
-                JSON.stringify({
-                    success: false,
-                    message: '사용자를 찾을 수 없습니다.'
-                }),
-                { status: 404 }
-            );
+            return json({ message: '사용자를 찾을 수 없습니다.' }, { status: 404 });
         }
 
         return json(user);
     } catch (error) {
         console.error('Profile fetch error:', error);
-        return new Response(
-            JSON.stringify({
-                success: false,
-                message: '서버 오류가 발생했습니다.'
-            }),
-            { status: 500 }
-        );
+        return json({ message: '프로필 정보를 가져오는데 실패했습니다.' }, { status: 500 });
     }
 };
 
 // PUT: 프로필 정보 업데이트
-export const PUT: RequestHandler = async ({ request }) => {
+export const PUT: RequestHandler = async ({ request, locals }) => {
     try {
-        const { 
-            name, 
-            gpa_1_1, 
-            gpa_1_2, 
-            gpa_2_1, 
-            gpa_2_2, 
-            gpa_3_1 
-        } = await request.json();
-
-        const email = request.headers.get('X-User-Email');
-
-        if (!email) {
-            return new Response(
-                JSON.stringify({
-                    success: false,
-                    message: '인증 정보가 없습니다.'
-                }),
-                { status: 401 }
-            );
+        const data = await request.json();
+        
+        // locals.user에서 이메일 가져오기
+        if (!locals.user?.email) {
+            return json({ message: '사용자 정보를 찾을 수 없습니다.' }, { status: 400 });
         }
 
-        // 학기별 학점을 숫자로 변환
-        const gpas = [gpa_1_1, gpa_1_2, gpa_2_1, gpa_2_2, gpa_3_1]
-            .map(gpa => parseFloat(gpa));
+        // 업데이트할 데이터 준비
+        const updateData: any = {
+            name: data.name
+        };
 
-        // 미이수(-1)를 제외한 학점들의 평균 계산
-        const validGpas = gpas.filter(gpa => gpa !== -1);
-        const overall_gpa = validGpas.length > 0 
-            ? validGpas.reduce((sum, gpa) => sum + gpa, 0) / validGpas.length 
-            : 0;
+        // 전체 평균학점이 있는 경우
+        if (data.useOverallGpa) {
+            updateData.overall_gpa = parseFloat(data.overall_gpa);
+            // 학기별 학점은 모두 -1로 설정
+            updateData.gpa_1_1 = -1;
+            updateData.gpa_1_2 = -1;
+            updateData.gpa_2_1 = -1;
+            updateData.gpa_2_2 = -1;
+            updateData.gpa_3_1 = -1;
+        } else {
+            // 학기별 학점 업데이트
+            updateData.gpa_1_1 = parseFloat(data.semester_gpas[0]) || -1;
+            updateData.gpa_1_2 = parseFloat(data.semester_gpas[1]) || -1;
+            updateData.gpa_2_1 = parseFloat(data.semester_gpas[2]) || -1;
+            updateData.gpa_2_2 = parseFloat(data.semester_gpas[3]) || -1;
+            updateData.gpa_3_1 = parseFloat(data.semester_gpas[4]) || -1;
+
+            // 유효한 학기 학점들의 평균을 전체 평균학점으로 설정
+            const validGpas = [
+                updateData.gpa_1_1,
+                updateData.gpa_1_2,
+                updateData.gpa_2_1,
+                updateData.gpa_2_2,
+                updateData.gpa_3_1
+            ].filter(gpa => gpa > -1);
+
+            updateData.overall_gpa = validGpas.length > 0
+                ? validGpas.reduce((sum, gpa) => sum + gpa, 0) / validGpas.length
+                : -1;
+        }
 
         const updatedUser = await prisma.user.update({
-            where: { email },
-            data: {
-                name,
-                overall_gpa,
-                gpa_1_1: gpas[0],
-                gpa_1_2: gpas[1],
-                gpa_2_1: gpas[2],
-                gpa_2_2: gpas[3],
-                gpa_3_1: gpas[4]
-            }
+            where: { email: locals.user.email },
+            data: updateData
         });
 
-        return json({
-            success: true,
-            message: '프로필이 성공적으로 업데이트되었습니다.'
-        });
+        return json(updatedUser);
     } catch (error) {
         console.error('Profile update error:', error);
-        return new Response(
-            JSON.stringify({
-                success: false,
-                message: '서버 오류가 발생했습니다.'
-            }),
-            { status: 500 }
-        );
+        return json({ message: '프로필 업데이트에 실패했습니다.' }, { status: 500 });
     }
 }; 

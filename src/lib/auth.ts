@@ -1,32 +1,31 @@
 import { writable } from 'svelte/store';
-import type { User } from '@prisma/client';
 
-function createUserStore() {
-    const { subscribe, set, update } = writable<User | null>(null);
+// 사용자 타입 정의
+type User = {
+    id: string;
+    email: string;
+    name: string;
+    isAdmin: boolean;
+} | null;
 
-    // 페이지 로드시 세션 스토리지에서 사용자 정보 복원
-    if (typeof window !== 'undefined') {
-        const savedUser = sessionStorage.getItem('user');
-        if (savedUser) {
-            set(JSON.parse(savedUser));
+// 사용자 스토어 생성
+export const user = writable<User>(null);
+
+// 사용자 정보 로드 함수
+export async function loadUser() {
+    try {
+        const response = await fetch('/api/me');
+        if (response.ok) {
+            const userData = await response.json();
+            user.set(userData);
+        } else {
+            user.set(null);
         }
+    } catch (error) {
+        console.error('Error loading user:', error);
+        user.set(null);
     }
-
-    return {
-        subscribe,
-        login: (userData: User) => {
-            sessionStorage.setItem('user', JSON.stringify(userData));
-            set(userData);
-        },
-        logout: () => {
-            sessionStorage.removeItem('user');
-            set(null);
-        },
-        update
-    };
 }
-
-export const user = createUserStore();
 
 export function validateEmail(email: string) {
     return email.endsWith('@djshs.djsch.kr');

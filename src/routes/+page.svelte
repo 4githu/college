@@ -10,17 +10,14 @@
         try {
             const response = await fetch('/api/login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                user.login(data.user);
-                goto('/selection');
+                goto(data.redirectTo);
             } else {
                 errorMessage = data.message;
             }
@@ -43,7 +40,7 @@
                         <input
                             type="text"
                             bind:value={email}
-                            placeholder="학번"
+                            placeholder="이메일 주소"
                             required
                         />
                         <span class="email-domain">@djshs.djsch.kr</span>
