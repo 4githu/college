@@ -152,6 +152,61 @@
             console.error('Error deleting department:', error);
         }
     }
+
+    let csvFile: File | null = null;
+let isUploading = false;
+let uploadResult = { success: false, message: '', data: null };
+
+function handleFileChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+        csvFile = target.files[0];
+    }
+}
+
+async function uploadCSV() {
+    if (!csvFile) return;
+    
+    isUploading = true;
+    uploadResult = { success: false, message: '', data: null };
+    
+    try {
+        const formData = new FormData();
+        formData.append('csv', csvFile);
+        
+        const response = await fetch('/api/admin/import-csv', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            uploadResult = {
+                success: true,
+                message: `성공적으로 업로드 되었습니다. ${result.added} 개의 항목이 추가되었습니다.`,
+                data: result
+            };
+            // 페이지 새로고침
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            uploadResult = {
+                success: false,
+                message: result.message || '업로드 중 오류가 발생했습니다.',
+                data: null
+            };
+        }
+    } catch (error) {
+        console.error('CSV 업로드 오류:', error);
+        uploadResult = {
+            success: false,
+            message: '업로드 중 오류가 발생했습니다.',
+            data: null
+        };
+    } finally {
+            isUploading = false;
+        }
+    }
 </script>
 
 <div class="admin-dashboard">
@@ -182,6 +237,32 @@
 
     {#if activeTab === 'universities'}
         <div class="universities-section">
+            <div class="csv-import-section">
+                <div class="section-header">
+                    <h2>CSV 일괄 등록</h2>
+                </div>
+                
+                <div class="csv-upload-container">
+                    <div class="upload-instructions">
+                        <p>대학, 단과대학, 학과 정보를 CSV 파일로 일괄 등록할 수 있습니다.</p>
+                        <p>CSV 파일 형식: UTF-8 인코딩, 쉼표(,) 구분</p>
+                        <p>헤더(첫 줄): "대학", "단과대학", "학과", "정원"</p>
+                    </div>
+                    
+                    <div class="file-upload">
+                        <input type="file" accept=".csv" on:change={handleFileChange} id="csv-upload" />
+                        <button class="upload-btn" on:click={uploadCSV} disabled={!csvFile || isUploading}>
+                            {isUploading ? '업로드 중...' : 'CSV 파일 업로드'}
+                        </button>
+                    </div>
+                    
+                    {#if uploadResult.message}
+                        <div class="upload-result" class:success={uploadResult.success} class:error={!uploadResult.success}>
+                            {uploadResult.message}
+                        </div>
+                    {/if}
+                </div>
+            </div>
             <div class="section-header">
                 <h2>대학교 관리</h2>
                 <button class="add-btn" on:click={() => isAddingUniversity = true}>
